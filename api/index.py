@@ -1,12 +1,19 @@
 """
-Vercel Python serverless function: POST /api/predict
+Vercel Python serverless function — single entrypoint.
 
-Body: JSON object with the 30 feature fields described in
+This project's Vercel Python runtime requires exactly one entrypoint file to
+auto-detect (multiple api/*.py handler files triggered a "No python
+entrypoint found in default locations" build error). GET /api/health and
+POST /api/predict both resolve here via vercel.json rewrites; dispatch is by
+HTTP method (not path), so it works regardless of which URL reached this
+function:
+  - GET  -> health/status info (model metadata + accepted field schema)
+  - POST -> run a prediction on the JSON body
+
+Body for POST: JSON object with the 30 feature fields described in
 common.preprocessing.FINAL_FEATURE_ORDER (protocol_type/flag as strings,
-e.g. "tcp"/"SF"; everything else numeric). See public/app.js EXAMPLES for
+e.g. "tcp"/"SF"; everything else numeric). See public/examples.json for
 sample payloads per attack category.
-
-Response: {"prediction": "<normal|dos|probe|r2l|u2r>", "probabilities": {...}}
 """
 from __future__ import annotations
 
@@ -22,7 +29,8 @@ import joblib  # noqa: E402
 
 from common.preprocessing import FINAL_FEATURE_ORDER, InvalidInputError, encode_record  # noqa: E402
 
-ARTIFACTS_DIR = Path(__file__).resolve().parent.parent / "model" / "artifacts"
+ROOT = Path(__file__).resolve().parent.parent
+ARTIFACTS_DIR = ROOT / "model" / "artifacts"
 
 _model = None
 _scaler = None
@@ -46,6 +54,17 @@ def _predict(payload: dict) -> dict:
     return {"prediction": prediction, "probabilities": probabilities}
 
 
+def _health() -> dict:
+    metadata_path = ARTIFACTS_DIR / "metadata.json"
+    if not metadata_path.exists():
+        return {"status": "error", "detail": "Model artifacts missing"}
+    return {
+        "status": "ok",
+        "model": json.loads(metadata_path.read_text()),
+        "fields": FINAL_FEATURE_ORDER,
+    }
+
+
 class handler(BaseHTTPRequestHandler):
     def _send_json(self, status: int, body: dict):
         payload = json.dumps(body).encode("utf-8")
@@ -59,9 +78,13 @@ class handler(BaseHTTPRequestHandler):
     def do_OPTIONS(self):
         self.send_response(204)
         self.send_header("Access-Control-Allow-Origin", "*")
-        self.send_header("Access-Control-Allow-Methods", "POST, OPTIONS")
+        self.send_header("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
         self.send_header("Access-Control-Allow-Headers", "Content-Type")
         self.end_headers()
+
+    def do_GET(self):
+        data = _health()
+        self._send_json(200 if data["status"] == "ok" else 503, data)
 
     def do_POST(self):
         try:
@@ -88,12 +111,3 @@ class handler(BaseHTTPRequestHandler):
         except Exception as exc:  # noqa: BLE001
             debug = os.environ.get("IDS_DEBUG") == "1"
             self._send_json(500, {"error": "Internal error" + (f": {exc}" if debug else "")})
-
-    def do_GET(self):
-        self._send_json(
-            200,
-            {
-                "message": "POST a JSON object with these fields to run a prediction.",
-                "fields": FINAL_FEATURE_ORDER,
-            },
-        )

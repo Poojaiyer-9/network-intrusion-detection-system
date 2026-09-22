@@ -28,8 +28,10 @@ network-intrusion-detection-system/
 │   ├── synthetic.py          Schema-accurate synthetic data generator (fallback, see below)
 │   └── artifacts/            model.joblib, scaler.joblib, metadata.json (committed, ~170KB)
 ├── api/
-│   ├── predict.py            POST /api/predict — Vercel Python serverless function
-│   ├── health.py             GET /api/health
+│   ├── index.py              Single Vercel Python entrypoint (this account's Vercel
+│   │                         Python runtime only auto-detects one); GET /api/health and
+│   │                         POST /api/predict both route here via vercel.json rewrites,
+│   │                         dispatched by HTTP method
 │   └── requirements.txt      (mirrors root requirements.txt)
 ├── public/                   Static frontend (index.html, app.js, style.css, examples.json)
 ├── data/README.md            How to fetch the real dataset for a production retrain
@@ -89,7 +91,7 @@ themselves already consume a large share of that. The synthetic model is ~170KB;
 - **No deployable artifact.** The notebook trained 6 models in-memory and never persisted
   anything — there was nothing to deploy. Added `model/train.py`, which saves versioned,
   reloadable `model.joblib` + `scaler.joblib` + `metadata.json`.
-- **Unhandled exceptions would leak internals.** `api/predict.py` catches
+- **Unhandled exceptions would leak internals.** `api/index.py` catches
   input-validation errors (400), missing-artifact errors (503), and unexpected errors
   (500, generic message — set `IDS_DEBUG=1` in Vercel's environment variables to include
   exception details while debugging, and unset it in production).
