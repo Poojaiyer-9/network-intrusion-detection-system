@@ -1,155 +1,176 @@
  🛡️ Network Intrusion Detection System
-> A machine learning-based IDS that detects cyberattacks in network traffic using the KDD Cup 99 dataset — achieving up to 99.97% accuracy with Random Forest.
-
-
-
-
- 📌 Overview
-
-Traditional firewalls and rule-based systems struggle to detect novel or evolving cyberattacks. This project builds an intelligent, data-driven Intrusion Detection System (IDS) that uses supervised machine learning to classify network traffic as normal or one of four attack categories:
-
-| Attack Type | Examples |
-|---|---|
-| DoS (Denial of Service) | smurf, neptune, teardrop |
-| Probe | ipsweep, nmap, satan, portsweep |
-| R2L (Remote to Local) | ftp_write, guess_passwd, imap |
-| U2R (User to Root) | buffer_overflow, rootkit, perl |
+> A machine learning-based IDS that classifies network traffic as normal or one of four
+> attack categories (DoS, Probe, R2L, U2R), served as a web app + REST API deployable on
+> Vercel, and originally developed against the KDD Cup 99 dataset (Random Forest, up to
+> 99.97% accuracy on the real dataset — see "Model & data" below for what's bundled here).
 
 ---
 
- 📂 Repository Structure
+ 🚀 Live app
+
+- `GET /` — a form-based UI: load a sample connection or fill in the 30 traffic features,
+  click Predict, see the classification + per-class confidence.
+- `POST /api/predict` — JSON API. Body = the 30 features (see
+  `common/preprocessing.py::FINAL_FEATURE_ORDER`); returns `{"prediction": ..., "probabilities": {...}}`.
+- `GET /api/health` — model/deployment status (data source, accuracy, feature schema).
+
+---
+
+ 📂 Repository structure
 
 ```
 network-intrusion-detection-system/
-│
-├── intrusion_detection_system.ipynb    Main notebook (EDA + Preprocessing + Modelling)
-├── README.md                           Project documentation
+├── network_intrusion.ipynb   Original EDA + preprocessing + model-comparison notebook
+├── common/preprocessing.py   Single source of truth for the 30-feature schema, shared
+│                             by training and inference (keeps them from drifting apart)
+├── model/
+│   ├── train.py              Trains the Random Forest and saves deployable artifacts
+│   ├── synthetic.py          Schema-accurate synthetic data generator (fallback, see below)
+│   └── artifacts/            model.joblib, scaler.joblib, metadata.json (committed, ~170KB)
+├── api/
+│   ├── predict.py            POST /api/predict — Vercel Python serverless function
+│   ├── health.py             GET /api/health
+│   └── requirements.txt      (mirrors root requirements.txt)
+├── public/                   Static frontend (index.html, app.js, style.css, examples.json)
+├── data/README.md            How to fetch the real dataset for a production retrain
+├── requirements.txt          Runtime deps for the deployed API (numpy, scikit-learn, joblib)
+├── requirements-dev.txt      + pandas, for local training
+└── vercel.json
 ```
 
 ---
 
- 📊 Dataset
+ 🧠 Model & data — read this before trusting accuracy numbers
 
-KDD Cup 1999 Dataset — one of the most widely used benchmarks for IDS research.
+The original notebook trains on the real **KDD Cup 1999** 10%-subset (494,021 rows,
+downloaded manually — see `data/README.md`). That file is ~70MB, isn't included in this
+repo, and this build environment had no network access to fetch it automatically.
 
-| Property | Value |
-|---|---|
-| Source | [KDD Cup 1999](http://kdd.ics.uci.edu/databases/kddcup99/kddcup99.html) |
-| File used | `kddcup.data_10_percent_corrected` |
-| Total records | 494,021 |
-| Features | 41 network traffic attributes |
-| Classes | normal, dos, probe, r2l, u2r |
-| Missing values | None |
+So that the app is fully deployable and testable out of the box, `model/train.py` falls
+back to a **synthetic, schema-identical dataset** (`model/synthetic.py`) when the real file
+isn't present at `data/kddcup.data_10_percent_corrected`. The bundled `model/artifacts/`
+were built this way — `metadata.json`'s `"source": "synthetic"` and the health endpoint
+both say so explicitly. It exercises the exact same preprocessing/training/inference code
+path as real data, but its accuracy numbers are **not meaningful** — it's a demo, not a
+validated classifier.
 
-Key features include: `duration`, `protocol_type`, `service`, `flag`, `src_bytes`, `dst_bytes`, and 35+ statistical traffic features.
-
----
-
- ⚙️ Methodology
-
- 1. Data Preprocessing
-- Loaded KDD Cup dataset with 41 features + target label
-- Mapped 22 specific attack names → 4 attack categories + normal
-- Label-encoded categorical features: `protocol_type`, `flag`
-- Dropped `service` (high cardinality, low signal)
-- Removed 8 highly correlated features identified via heatmap analysis:
-  `num_root`, `srv_serror_rate`, `srv_rerror_rate`, `dst_host_srv_serror_rate`,
-  `dst_host_serror_rate`, `dst_host_rerror_rate`, `dst_host_srv_rerror_rate`, `dst_host_same_srv_rate`
-- Dropped 2 zero-variance features: `is_host_login`, `num_outbound_cmds`
-- Applied MinMaxScaler normalization
-- Final feature set: 30 features
-- Train/Test split: 330,994 / 163,027 samples (67/33)
-
- 2. Models Trained
-Six classifiers were implemented and compared:
-- Naive Bayes (GaussianNB)
-- Decision Tree (entropy criterion, max_depth=4)
-- Random Forest (n_estimators=30)
-- Support Vector Machine (RBF kernel)
-- Logistic Regression
-- Gradient Boosting
-
- 3. Evaluation
-Models were evaluated on test accuracy and training/inference time.
-
----
-
- 📈 Results
-
-| Model | Train Accuracy | Test Accuracy | Train Time |
-|---|---|---|---|
-| 🥇 Random Forest | 100.00% | 99.97% | 5.2s |
-| Gradient Boosting | 99.91% | 99.91% | 165.4s |
-| SVM | 99.88% | 99.88% | 111.6s |
-| Decision Tree | 99.39% | 99.38% | 0.7s |
-| Logistic Regression | 99.36% | 99.36% | 9.2s |
-| Naive Bayes | 87.95% | 87.90% | 0.6s |
-
-Random Forest achieves the best accuracy with a practical training time, making it the best overall model for this task.
-
----
-
- 🔧 Tech Stack
-
-| Tool | Purpose |
-|---|---|
-| Python 3.10 | Core language |
-| Pandas & NumPy | Data loading, manipulation |
-| Scikit-learn | ML models, preprocessing, evaluation |
-| Matplotlib & Seaborn | EDA visualizations, correlation heatmap |
-| Google Colab (T4 GPU) | Training environment |
-
----
-
- 🚀 How to Run
-
- Option 1: Google Colab (Recommended)
-1. Open the notebook in Colab
-2. Upload the KDD Cup dataset files:
-   - `kddcup.data_10_percent_corrected`
-   - `kddcup.names.txt`
-   - `training_attack_types.txt`
-3. Run all cells sequentially
-
-Option 2: Local Setup
+**To deploy a production-accuracy model:**
 ```bash
-Clone the repo
-git clone https://github.com/Poojaiyer-9/network-intrusion-detection-system.git
-cd network-intrusion-detection-system
-
- Install dependencies
-pip install pandas numpy scikit-learn matplotlib seaborn jupyter
-
-Launch notebook
-jupyter notebook intrusion_detection_system.ipynb
+pip install -r requirements-dev.txt
+# download the real dataset per data/README.md, then:
+python model/train.py
+git add model/artifacts && git commit -m "Retrain on real KDD Cup 99 data" && git push
 ```
+`train.py` auto-detects the real file and uses it in preference to synthetic data.
 
-> Dataset download: [KDD Cup 99 Dataset](http://kdd.ics.uci.edu/databases/kddcup99/kddcup99.html)
-
-🔍 Key Findings
-
-- Feature engineering matters — removing 10 redundant/zero-variance features improved model efficiency without hurting accuracy
-- Ensemble methods dominate — Random Forest and Gradient Boosting outperform single classifiers significantly
-- Speed vs accuracy tradeoff — Gradient Boosting matches Random Forest accuracy but takes 32× longer to train
-- Naive Bayes limitation — its independence assumption doesn't hold well for correlated network traffic features
+ Model size & Vercel limits
+`train.py` caps the Random Forest at `n_estimators=30, max_depth=14` (vs. unbounded depth
+in the original notebook) specifically so the serialized model stays small — Vercel
+serverless functions have a 250MB unzipped bundle limit, and scikit-learn/numpy/scipy
+themselves already consume a large share of that. The synthetic model is ~170KB; a real
+10%-KDD-trained model at these settings should still be a few MB. If you increase
+`max_depth`/`n_estimators` for the real dataset, re-check the deployed function size
+(`vercel inspect` after deploying, or the dashboard's function size panel) before shipping.
 
 ---
 
- 🔭 Future Work
+ 🐛 Bugs fixed vs. the original notebook
 
-- [ ] Add XGBoost and LSTM models for deeper comparison
+- **Silent NaN propagation on unseen categorical values.** The notebook's
+  `.map(pmap)`/`.map(fmap)` produce `NaN` for any `protocol_type`/`flag` value outside the
+  training set's vocabulary, which `RandomForestClassifier` doesn't accept — a malformed
+  request would previously either crash with an opaque error or (depending on sklearn
+  version) silently corrupt predictions. `common/preprocessing.py::encode_record` now
+  validates every field up front and raises a clear, user-facing 400 error naming exactly
+  which field/value is invalid.
+- **No reproducible environment.** No `requirements.txt` existed; exact dependency
+  versions weren't pinned anywhere, so notebook runs weren't reproducible. Added pinned
+  `requirements.txt` / `requirements-dev.txt`.
+- **No deployable artifact.** The notebook trained 6 models in-memory and never persisted
+  anything — there was nothing to deploy. Added `model/train.py`, which saves versioned,
+  reloadable `model.joblib` + `scaler.joblib` + `metadata.json`.
+- **Unhandled exceptions would leak internals.** `api/predict.py` catches
+  input-validation errors (400), missing-artifact errors (503), and unexpected errors
+  (500, generic message — set `IDS_DEBUG=1` in Vercel's environment variables to include
+  exception details while debugging, and unset it in production).
+- **No `.gitignore`.** Local venvs, `__pycache__`, and the large raw dataset file had no
+  guard against being accidentally committed.
+
+---
+
+ 🧩 Methodology (unchanged from the original notebook)
+
+ 1. Preprocessing
+- 41 raw KDD features + label; 22 attack names mapped → 4 categories (DoS, Probe, R2L, U2R) + normal
+- Label-encoded `protocol_type`, `flag`; dropped `service` (high cardinality, low signal)
+- Removed 8 highly-correlated features (heatmap analysis) and 2 zero-variance features
+- MinMaxScaler normalization → **30 final features**
+- Train/test split: 67% / 33%
+
+ 2. Models compared (see notebook for full results)
+Naive Bayes, Decision Tree, Random Forest, SVM, Logistic Regression, Gradient Boosting —
+**Random Forest** was selected for deployment: best accuracy (99.97% on the real dataset
+per the original notebook run) at a practical training/inference cost.
+
+---
+
+ 🔧 Tech stack
+
+| Layer | Tool |
+|---|---|
+| Model | scikit-learn (RandomForestClassifier), MinMaxScaler |
+| API | Python stdlib `http.server` handlers, deployed as Vercel Python serverless functions |
+| Frontend | Static HTML/CSS/vanilla JS (no build step) |
+| Hosting | Vercel |
+
+---
+
+ 🖥️ Local development
+
+```bash
+# 1. Install dev deps (includes pandas, needed only for training)
+pip install -r requirements-dev.txt
+
+# 2. Train (uses synthetic data unless the real dataset is present, see data/README.md)
+python model/train.py
+
+# 3. Serve locally with the Vercel CLI (installs on first run)
+npx vercel dev
+```
+Then open http://localhost:3000.
+
+Run the original EDA notebook (`network_intrusion.ipynb`) separately for exploratory
+analysis, correlation heatmaps, and the full 6-model comparison; it isn't part of the
+deployed app.
+
+---
+
+ ☁️ Deploying to Vercel
+
+1. Push this repo to GitHub (already done if you're reading this on GitHub).
+2. In the [Vercel dashboard](https://vercel.com/new), import the repository. No build
+   command or framework preset is needed — Vercel auto-detects the static `public/`
+   output (via `vercel.json`'s `outputDirectory`) and the `api/*.py` Python functions.
+3. Deploy. Verify `GET /api/health` returns `"status": "ok"` and check whether
+   `model.source` is `"synthetic"` or `"real"` before treating predictions as trustworthy.
+
+Or via CLI: `npx vercel --prod` from the repo root.
+
+---
+
+ 🔭 Future work
+
+- [ ] Retrain and ship on the full real KDD Cup 99 dataset (see `data/README.md`)
+- [ ] Add XGBoost / LSTM models for deeper comparison
 - [ ] Evaluate on UNSW-NB15 and CICIDS2017 for generalizability
-- [ ] Implement real-time traffic simulation and prediction
-- [ ] Add SHAP-based feature importance explainability
-- [ ] Deploy as a REST API using FastAPI or Flask
+- [ ] SHAP-based feature importance explainability in the UI
 
+---
 
-👩💻 Author
+ 👩‍💻 Author
 
 Pooja V — B.E. CSE (AI & ML), Nagarjuna College of Engineering & Technology, Bengaluru
 
+ 📄 License
 
-📄 License
-
-This project is licensed under the MIT License.
-
+MIT License.

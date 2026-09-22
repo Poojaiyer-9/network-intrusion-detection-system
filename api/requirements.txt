@@ -1,0 +1,5 @@
+# Mirrors ../requirements.txt — Vercel's Python builder looks for a
+# requirements.txt alongside the function entrypoints.
+scikit-learn==1.9.1
+numpy>=2.0,<3
+joblib>=1.4,<2

@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Network Intrusion Detection System</title>
+<link rel="stylesheet" href="/style.css" />
+</head>
+<body>
+  <header class="page-header">
+    <h1>🛡️ Network Intrusion Detection System</h1>
+    <p>Classifies network traffic as <strong>normal</strong> or one of four attack
+      categories — DoS, Probe, R2L, U2R — using a Random Forest model trained on the
+      KDD Cup 99 feature set.</p>
+    <p id="model-status" class="status-line">Checking model status…</p>
+  </header>
+
+  <main>
+    <section class="panel">
+      <h2>1. Load a sample connection</h2>
+      <p class="hint">Or fill in the 30 fields below manually and click Predict.</p>
+      <div class="presets" id="presets"></div>
+    </section>
+
+    <form id="predict-form" class="panel">
+      <h2>2. Connection features</h2>
+      <div id="fields" class="fields-grid"></div>
+      <button type="submit" id="submit-btn">Predict</button>
+    </form>
+
+    <section class="panel" id="result-panel" hidden>
+      <h2>Result</h2>
+      <div id="result"></div>
+    </section>
+
+    <section class="panel">
+      <h2>API</h2>
+      <p class="hint">This UI calls <code>POST /api/predict</code> with a JSON body of the
+        same 30 fields. <code>GET /api/health</code> reports model metadata.</p>
+    </section>
+  </main>
+
+  <footer>
+    <p>Source: <a href="https://github.com/Poojaiyer-9/network-intrusion-detection-system">GitHub</a></p>
+  </footer>
+
+  <script src="/app.js"></script>
+</body>
+</html>
