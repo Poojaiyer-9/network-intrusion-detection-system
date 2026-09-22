@@ -5,5 +5,9 @@
       "memory": 512,
       "maxDuration": 10
     }
-  }
+  },
+  "rewrites": [
+    { "source": "/api/predict", "destination": "/api/index" },
+    { "source": "/api/health", "destination": "/api/index" }
+  ]
 }
