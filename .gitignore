@@ -1,0 +1,12 @@
+__pycache__/
+*.pyc
+.venv/
+venv/
+.env
+.vercel/
+
+# Real KDD Cup 99 dataset (download locally per data/README.md, do not commit)
+data/kddcup.data_10_percent_corrected
+data/*.gz
+
+.DS_Store

@@ -1,0 +1,6 @@
+# Runtime dependencies for the Vercel Python serverless functions (api/*.py).
+# Keep this minimal — every package here adds to the deployed function's
+# bundle size, which Vercel caps (see README "Model size & Vercel limits").
+scikit-learn==1.9.1
+numpy>=2.0,<3
+joblib>=1.4,<2

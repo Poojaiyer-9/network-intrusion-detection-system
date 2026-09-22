@@ -1,0 +1,52 @@
+{
+  "normal": {
+    "duration": 7.4, "protocol_type": "udp", "flag": "SF", "src_bytes": 25, "dst_bytes": 98.6,
+    "land": 0, "wrong_fragment": 0, "urgent": 0, "hot": 0, "num_failed_logins": 0,
+    "logged_in": 1, "num_compromised": 0, "root_shell": 0, "su_attempted": 0,
+    "num_file_creations": 0, "num_shells": 0, "num_access_files": 0, "is_guest_login": 0,
+    "count": 8, "srv_count": 15, "serror_rate": 0.0002, "rerror_rate": 0,
+    "same_srv_rate": 0.9745, "diff_srv_rate": 0.0407, "srv_diff_host_rate": 0.0848,
+    "dst_host_count": 75.6, "dst_host_srv_count": 12.1, "dst_host_diff_srv_rate": 0.0407,
+    "dst_host_same_src_port_rate": 0.0312, "dst_host_srv_diff_host_rate": 0.0271
+  },
+  "dos": {
+    "duration": 0, "protocol_type": "icmp", "flag": "S0", "src_bytes": 1.9, "dst_bytes": 0,
+    "land": 0, "wrong_fragment": 0, "urgent": 0, "hot": 0, "num_failed_logins": 0,
+    "logged_in": 0, "num_compromised": 0, "root_shell": 0, "su_attempted": 0,
+    "num_file_creations": 0, "num_shells": 0, "num_access_files": 0, "is_guest_login": 0,
+    "count": 273, "srv_count": 427, "serror_rate": 0.9578, "rerror_rate": 0.0144,
+    "same_srv_rate": 0.8242, "diff_srv_rate": 0.0038, "srv_diff_host_rate": 0,
+    "dst_host_count": 146.1, "dst_host_srv_count": 282.8, "dst_host_diff_srv_rate": 0.0038,
+    "dst_host_same_src_port_rate": 0.2044, "dst_host_srv_diff_host_rate": 0.0011
+  },
+  "probe": {
+    "duration": 0, "protocol_type": "tcp", "flag": "REJ", "src_bytes": 7, "dst_bytes": 0,
+    "land": 0, "wrong_fragment": 0, "urgent": 0, "hot": 0, "num_failed_logins": 0,
+    "logged_in": 0, "num_compromised": 0, "root_shell": 0, "su_attempted": 0,
+    "num_file_creations": 0, "num_shells": 0, "num_access_files": 0, "is_guest_login": 0,
+    "count": 76.5, "srv_count": 2.7, "serror_rate": 0.2777, "rerror_rate": 0.4221,
+    "same_srv_rate": 0.2096, "diff_srv_rate": 0.455, "srv_diff_host_rate": 0,
+    "dst_host_count": 156.1, "dst_host_srv_count": 135.9, "dst_host_diff_srv_rate": 0.455,
+    "dst_host_same_src_port_rate": 0.4719, "dst_host_srv_diff_host_rate": 0.056
+  },
+  "r2l": {
+    "duration": 1.7, "protocol_type": "tcp", "flag": "SF", "src_bytes": 171.3, "dst_bytes": 3.3,
+    "land": 0, "wrong_fragment": 0, "urgent": 0, "hot": 0, "num_failed_logins": 1,
+    "logged_in": 0, "num_compromised": 0, "root_shell": 0, "su_attempted": 0,
+    "num_file_creations": 0, "num_shells": 0, "num_access_files": 0, "is_guest_login": 0,
+    "count": 2.9, "srv_count": 1.7, "serror_rate": 0.0405, "rerror_rate": 0.0467,
+    "same_srv_rate": 0.8002, "diff_srv_rate": 0.2439, "srv_diff_host_rate": 0.0402,
+    "dst_host_count": 55, "dst_host_srv_count": 0, "dst_host_diff_srv_rate": 0.2439,
+    "dst_host_same_src_port_rate": 0.4798, "dst_host_srv_diff_host_rate": 0.1073
+  },
+  "u2r": {
+    "duration": 2.8, "protocol_type": "tcp", "flag": "SF", "src_bytes": 27.3, "dst_bytes": 144.1,
+    "land": 0, "wrong_fragment": 0, "urgent": 0, "hot": 0, "num_failed_logins": 0,
+    "logged_in": 1, "num_compromised": 0, "root_shell": 1, "su_attempted": 1,
+    "num_file_creations": 2, "num_shells": 0, "num_access_files": 0, "is_guest_login": 0,
+    "count": 0, "srv_count": 1, "serror_rate": 0, "rerror_rate": 0,
+    "same_srv_rate": 1, "diff_srv_rate": 0, "srv_diff_host_rate": 0.0676,
+    "dst_host_count": 115.8, "dst_host_srv_count": 0, "dst_host_diff_srv_rate": 0,
+    "dst_host_same_src_port_rate": 0.2758, "dst_host_srv_diff_host_rate": 0.0401
+  }
+}
