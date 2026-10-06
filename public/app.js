@@ -94,8 +94,7 @@ async function checkHealth() {
     const data = await res.json();
     if (res.ok && data.status === "ok") {
       const src = data.model.source;
-      statusEl.textContent = `Model ready (${src} data, ${data.model.test_accuracy_pct}% test accuracy)` +
-        (src === "synthetic" ? " — demo model, retrain on real data for production use." : "");
+      statusEl.textContent = `Model ready: ${src} (${data.model.test_accuracy_pct}% test accuracy)`;
       statusEl.classList.add("ok");
     } else {
       statusEl.textContent = "Model artifacts missing — run model/train.py and redeploy.";

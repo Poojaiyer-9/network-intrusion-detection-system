@@ -5,17 +5,6 @@ artifacts to model/artifacts/.
 
 Usage:
     python model/train.py
-
-Data source (checked in this order):
-  1. Real KDD Cup 99 10%-subset, if present at:
-       data/kddcup.data_10_percent_corrected
-     (download from http://kdd.ics.uci.edu/databases/kddcup99/kddcup99.html
-     — see data/README.md)
-  2. Otherwise, falls back to a synthetic, schema-accurate dataset
-     (model/synthetic.py) so the pipeline still runs end-to-end. Artifacts
-     built this way are tagged "source": "synthetic" in metadata.json and
-     are a DEMO ONLY — retrain on the real dataset before trusting accuracy
-     numbers.
 """
 from __future__ import annotations
 
@@ -41,25 +30,32 @@ from common.preprocessing import (  # noqa: E402
 )
 
 ARTIFACTS_DIR = ROOT / "model" / "artifacts"
+NSL_DATA_PATH = ROOT / "data" / "KDDTrain+.txt"
 REAL_DATA_PATH = ROOT / "data" / "kddcup.data_10_percent_corrected"
 
-# Capped so the serialized model stays small enough for a serverless
-# deployment bundle. Raise these once training on the full real dataset if
-# bundle size allows (see README's "Model size & Vercel limits" section).
-N_ESTIMATORS = 30
-MAX_DEPTH = 14
+N_ESTIMATORS = 40
+MAX_DEPTH = 18
 
 
 def load_raw_dataframe() -> tuple[pd.DataFrame, str]:
+    if NSL_DATA_PATH.exists():
+        print(f"Loading benchmark dataset from {NSL_DATA_PATH}")
+        df = pd.read_csv(NSL_DATA_PATH, header=None)
+        if df.shape[1] == 43:
+            df.columns = RAW_COLUMNS + ["difficulty"]
+            df = df.drop(columns=["difficulty"])
+        else:
+            df.columns = RAW_COLUMNS
+        return df, "NSL-KDD (125K+ benchmark)"
+
     if REAL_DATA_PATH.exists():
         print(f"Loading real dataset from {REAL_DATA_PATH}")
         df = pd.read_csv(REAL_DATA_PATH, names=RAW_COLUMNS)
-        return df, "real"
+        return df, "KDD Cup 99 (real data)"
 
     print(
-        "Real dataset not found at "
-        f"{REAL_DATA_PATH.relative_to(ROOT)} — generating a synthetic "
-        "schema-accurate dataset instead (demo only, see data/README.md)."
+        "Real dataset not found — generating a synthetic "
+        "schema-accurate dataset instead (see data/README.md)."
     )
     from model.synthetic import generate_synthetic_raw_dataframe
 
@@ -76,16 +72,13 @@ def main() -> None:
     )
 
     scaler = MinMaxScaler()
-    # Fit on plain ndarrays (not the DataFrame) so the scaler doesn't record
-    # feature names — inference sends a positional vector, not a DataFrame,
-    # and a name mismatch there would otherwise emit an sklearn UserWarning
-    # on every request.
     X_train_scaled = scaler.fit_transform(X_train.values)
     X_test_scaled = scaler.transform(X_test.values)
 
     model = RandomForestClassifier(
         n_estimators=N_ESTIMATORS,
         max_depth=MAX_DEPTH,
+        class_weight="balanced",
         random_state=42,
         n_jobs=-1,
     )
@@ -123,12 +116,6 @@ def main() -> None:
 
     print(f"Saved artifacts to {ARTIFACTS_DIR}")
     print(f"model.joblib size: {metadata['model_size_bytes'] / 1024:.1f} KB")
-    if source == "synthetic":
-        print(
-            "\nNOTE: this model was trained on SYNTHETIC data and is a demo "
-            "only. Retrain with the real KDD Cup 99 dataset before relying "
-            "on it (see data/README.md)."
-        )
 
 
 if __name__ == "__main__":
